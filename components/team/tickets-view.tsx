@@ -178,7 +178,11 @@ export function TicketsView({ userRole, userId }: { userRole: string; userId: st
                 {tickets.map((ticket) => (
                   <TableRow key={ticket.id}>
                     <TableCell className="font-medium">{ticket.title}</TableCell>
-                    <TableCell>{ticket.customer_name || ticket.customer_id}</TableCell>
+                    <TableCell>
+                      {ticket.customer_name || 
+                        (typeof ticket.customer_id === 'object' && ticket.customer_id?.company_name) || 
+                        (typeof ticket.customer_id === 'string' ? ticket.customer_id : 'N/A')}
+                    </TableCell>
                     <TableCell>
                       <Badge className={getStatusBadge(ticket.status)}>{getStatusLabel(ticket.status)}</Badge>
                     </TableCell>
