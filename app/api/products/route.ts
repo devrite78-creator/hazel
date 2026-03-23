@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       const cid = customerId || session.customerId
 
       // Get all product assignments for this customer using correct field names
-      const assignments = await CustomerProduct.find({ customer_id: cid, is_active: true }).lean()
+      const assignments = await CustomerProduct.find({ customer_id: cid }).lean()
       const productIds = assignments.map((a: any) => a.product_id)
 
       let query: any = { _id: { $in: productIds } }
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
     if (teamSession) {
       if (customerId) {
         // Get assigned products for a specific customer using correct field names
-        const assignments = await CustomerProduct.find({ customer_id: customerId, is_active: true }).lean()
+        const assignments = await CustomerProduct.find({ customer_id: customerId }).lean()
         const productIds = assignments.map((a: any) => a.product_id)
         
         const products = await Product.find({ _id: { $in: productIds } }).sort({ name: 1 }).lean()
