@@ -9,10 +9,41 @@ import { toast } from "sonner"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Ticket, AlertCircle, Clock, CheckCircle2 } from "lucide-react"
 
+interface TicketStats {
+  open: number
+  inProgress: number
+  resolved: number
+  closed: number
+  total: number
+  pendingApproval: number
+}
+
 export default function TicketsPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<TicketStats>({
+    open: 0,
+    inProgress: 0,
+    resolved: 0,
+    closed: 0,
+    total: 0,
+    pendingApproval: 0,
+  })
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch("/api/tickets/stats", {
+        credentials: "include",
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data)
+      }
+    } catch (error) {
+      console.error("[v0] Stats fetch error:", error)
+    }
+  }
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -34,6 +65,7 @@ export default function TicketsPage() {
         }
 
         setUser(data.session)
+        fetchStats()
       } catch (error) {
         console.error("[v0] Session error:", error)
         router.push("/team/login")
@@ -43,6 +75,10 @@ export default function TicketsPage() {
     }
 
     fetchSession()
+    
+    // Refresh stats every 30 seconds
+    const interval = setInterval(fetchStats, 30000)
+    return () => clearInterval(interval)
   }, [router])
 
   const handleLogout = async () => {
@@ -109,10 +145,10 @@ export default function TicketsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Open</p>
-                        <p className="text-2xl font-bold">--</p>
+                        <p className="text-2xl font-bold">{stats.open}</p>
                       </div>
-                      <div className="h-9 w-9 rounded-lg bg-warning/10 flex items-center justify-center">
-                        <AlertCircle className="h-4 w-4 text-warning" />
+                      <div className="h-9 w-9 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
                       </div>
                     </div>
                   </CardContent>
@@ -122,10 +158,10 @@ export default function TicketsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">In Progress</p>
-                        <p className="text-2xl font-bold">--</p>
+                        <p className="text-2xl font-bold">{stats.inProgress}</p>
                       </div>
-                      <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Clock className="h-4 w-4 text-primary" />
+                      <div className="h-9 w-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-blue-600" />
                       </div>
                     </div>
                   </CardContent>
@@ -135,10 +171,10 @@ export default function TicketsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Resolved</p>
-                        <p className="text-2xl font-bold">--</p>
+                        <p className="text-2xl font-bold">{stats.resolved}</p>
                       </div>
-                      <div className="h-9 w-9 rounded-lg bg-success/10 flex items-center justify-center">
-                        <CheckCircle2 className="h-4 w-4 text-success" />
+                      <div className="h-9 w-9 rounded-lg bg-green-100 flex items-center justify-center">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
                       </div>
                     </div>
                   </CardContent>
@@ -148,7 +184,7 @@ export default function TicketsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Total</p>
-                        <p className="text-2xl font-bold">--</p>
+                        <p className="text-2xl font-bold">{stats.total}</p>
                       </div>
                       <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
                         <Ticket className="h-4 w-4 text-muted-foreground" />
