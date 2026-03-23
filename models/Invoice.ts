@@ -14,6 +14,8 @@ export interface IInvoice extends Document {
   visibility_start: Date
   visibility_end: Date
   is_active: boolean
+  is_deleted: boolean
+  deleted_at?: Date
   download_count: number
   created_at: Date
   updated_at: Date
@@ -73,6 +75,13 @@ const InvoiceSchema = new Schema<IInvoice>(
       type: Boolean,
       default: true,
     },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+    },
+    deleted_at: {
+      type: Date,
+    },
     download_count: {
       type: Number,
       default: 0,
@@ -87,6 +96,7 @@ InvoiceSchema.index({ customer_id: 1 })
 InvoiceSchema.index({ invoice_request_id: 1 })
 InvoiceSchema.index({ visibility_end: 1 })
 InvoiceSchema.index({ is_active: 1 })
+InvoiceSchema.index({ is_deleted: 1 })
 
 const Invoice: Model<IInvoice> =
   mongoose.models.Invoice || mongoose.model<IInvoice>("Invoice", InvoiceSchema)

@@ -185,3 +185,17 @@ export function formatTicketRejectedSMS(ticketId: string, reason: string): strin
 export function formatNewUserSMS(userName: string, tempPassword: string): string {
   return `Welcome ${userName}! Your account has been created. Temp password: ${tempPassword}. Please change it on first login.`
 }
+
+// Invoice SMS formatters
+export function formatInvoiceRequestApprovedSMS(
+  requestNumber: string,
+  customerName: string,
+  dateFrom: string,
+  dateTo: string
+): string {
+  return `Invoice Request Alert!\nRequest: ${requestNumber}\nCustomer: ${customerName}\nPeriod: ${dateFrom} - ${dateTo}\nPlease prepare and upload the invoice.`
+}
+
+export function formatInvoiceUploadedSMS(requestNumber: string, availableUntil: string): string {
+  return `Your invoice (${requestNumber}) is ready for download. Available until ${availableUntil}. Login to download.`
+}

@@ -11,7 +11,8 @@ import {
   User, 
   Mail,
   ChevronRight,
-  Building2
+  Building2,
+  FileText
 } from "lucide-react"
 import {
   Sidebar,
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { title: "Products", href: "/customer/products", icon: Package },
   { title: "Requests", href: "/customer/requests", icon: Mail },
   { title: "Tickets", href: "/customer/tickets", icon: Ticket },
+  { title: "Invoices", href: "/customer/invoices", icon: FileText },
   { title: "Profile", href: "/customer/profile", icon: User },
 ]
 
