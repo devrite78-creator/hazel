@@ -5,6 +5,7 @@ export interface IMessage extends Document {
   ticket_id: mongoose.Types.ObjectId
   sender_type: "customer" | "customer_user" | "agent"
   sender_id: mongoose.Types.ObjectId
+  sender_name?: string
   message: string
   attachments?: string[]
   created_at: Date
@@ -26,6 +27,10 @@ const MessageSchema = new Schema<IMessage>(
       type: Schema.Types.ObjectId,
       required: true,
       refPath: "sender_type_ref",
+    },
+    sender_name: {
+      type: String,
+      default: "",
     },
     message: {
       type: String,

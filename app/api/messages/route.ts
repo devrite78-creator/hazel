@@ -36,6 +36,7 @@ export async function GET(request: Request) {
       ticket_id: m.ticket_id.toString(),
       sender_type: m.sender_type,
       sender_id: m.sender_id.toString(),
+      sender_name: m.sender_name || "",
       message: m.message,
       attachments: m.attachments || [],
       created_at: m.created_at,
@@ -107,6 +108,7 @@ export async function POST(request: Request) {
       ticket_id: new mongoose.Types.ObjectId(ticketId),
       sender_type: senderType,
       sender_id: new mongoose.Types.ObjectId(senderId),
+      sender_name: senderName,
       message,
       attachments: attachments || [],
     })
@@ -192,6 +194,7 @@ export async function POST(request: Request) {
       ticket_id: newMessage.ticket_id.toString(),
       sender_type: newMessage.sender_type,
       sender_id: newMessage.sender_id.toString(),
+      sender_name: newMessage.sender_name,
       message: newMessage.message,
       attachments: newMessage.attachments,
       created_at: newMessage.created_at,

@@ -77,7 +77,7 @@ export function TicketConversation({
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`/api/messages?ticket_id=${ticketId}`)
+      const response = await fetch(`/api/messages?ticketId=${ticketId}`)
       if (response.ok) {
         const data = await response.json()
         setMessages(data)
@@ -167,10 +167,7 @@ export function TicketConversation({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ticket_id: ticketId,
-          sender_type: senderType,
-          sender_id: senderId,
-          sender_name: senderName,
+          ticketId: ticketId,
           message: newMessage.trim() || "Shared an image",
           attachments: uploadedAttachments,
         }),
