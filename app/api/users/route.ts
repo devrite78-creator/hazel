@@ -57,17 +57,17 @@ export async function GET(request: Request) {
     }
 
     users = await User.find(query)
-      .select("-passwordHash")
-      .sort({ createdAt: -1 })
+      .select("-password_hash")
+      .sort({ created_at: -1 })
       .lean()
 
     // Transform for frontend compatibility
     const transformed = users.map((u: any) => ({
       id: u._id.toString(),
-      full_name: u.fullName,
+      full_name: u.full_name,
       email: u.email,
       role: u.role,
-      created_at: u.createdAt,
+      created_at: u.created_at,
     }))
 
     return NextResponse.json(transformed)
