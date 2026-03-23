@@ -240,10 +240,10 @@ export default function EditUserPage() {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-background">
+      <div className="flex h-screen bg-background w-full">
         <TeamNav user={user} onLogout={handleLogout} />
         <main className="flex-1 overflow-auto">
-          <div className="p-8 max-w-2xl">
+          <div className="p-8">
             <div className="flex items-center gap-4 mb-8">
               <Button variant="ghost" asChild>
                 <Link href="/team/users">
