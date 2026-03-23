@@ -109,7 +109,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST - Create invoice request (customer_user_agent)
+// POST - Create invoice request
 export async function POST(request: Request) {
   try {
     const session = await getSession()
@@ -130,6 +130,11 @@ export async function POST(request: Request) {
     const sequence = await getNextSequence("invoice_request")
     const requestNumber = `INV-REQ-${String(sequence).padStart(6, "0")}`
 
+    // Determine initial status based on who creates the request
+    // customer_admin: auto-approved, customer_agent: needs approval
+    const isAdmin = session.role === CUSTOMER_ROLES.CUSTOMER_ADMIN
+    const initialStatus = isAdmin ? "approved" : "pending_approval"
+
     const invoiceRequest = await InvoiceRequest.create({
       request_number: requestNumber,
       customer_id: session.customerId,
@@ -137,46 +142,122 @@ export async function POST(request: Request) {
       date_range_start: new Date(date_range_start),
       date_range_end: new Date(date_range_end),
       description,
-      status: "pending_approval",
+      status: initialStatus,
+      // If admin creates, auto-approve
+      approved_by: isAdmin ? session.userId : undefined,
+      approved_at: isAdmin ? new Date() : undefined,
     })
 
-    // Notify customer_admin users for approval
-    const customerAdmins = await CustomerUser.find({
-      customer_id: session.customerId,
-      role: CUSTOMER_ROLES.CUSTOMER_ADMIN,
-      is_active: true,
-    })
+    if (isAdmin) {
+      // Auto-approved - notify accountants directly
+      const { sendSMS, sendWhatsApp, formatInvoiceRequestApprovedSMS } = await import("@/lib/sms")
+      
+      const customer = await Customer.findById(session.customerId)
+      const accountants = await User.find({ role: ROLES.ACCOUNTANT, is_active: true })
 
-    for (const admin of customerAdmins) {
-      await Notification.create({
-        user_id: admin._id,
-        user_type: "customer_user",
-        event_type: "invoice_request_pending",
-        entity_type: "invoice_request",
-        entity_id: invoiceRequest._id,
-        title: "New Invoice Request",
-        message: `New invoice request ${requestNumber} needs your approval.`,
-        read: false,
+      const dateFrom = new Date(date_range_start).toLocaleDateString()
+      const dateTo = new Date(date_range_end).toLocaleDateString()
+
+      for (const accountant of accountants) {
+        // Send SMS notification
+        if (accountant.mobile_number) {
+          await sendSMS({
+            to: accountant.mobile_number,
+            message: formatInvoiceRequestApprovedSMS(
+              requestNumber,
+              customer?.company_name || "Customer",
+              dateFrom,
+              dateTo
+            ),
+            type: "invoice_request_approved",
+            relatedId: invoiceRequest._id.toString(),
+          })
+
+          // Send WhatsApp notification
+          await sendWhatsApp({
+            to: accountant.mobile_number,
+            message: formatInvoiceRequestApprovedSMS(
+              requestNumber,
+              customer?.company_name || "Customer",
+              dateFrom,
+              dateTo
+            ),
+            type: "invoice_request_approved",
+            relatedId: invoiceRequest._id.toString(),
+          })
+        }
+
+        // Create in-app notification
+        await Notification.create({
+          user_id: accountant._id,
+          user_type: "team",
+          event_type: "invoice_request_approved",
+          entity_type: "invoice_request",
+          entity_id: invoiceRequest._id,
+          title: "New Invoice Request Approved",
+          message: `Invoice request ${requestNumber} from ${customer?.company_name || "Customer"} is ready for processing.`,
+          read: false,
+        })
+      }
+
+      await logActivity({
+        entityType: "invoice_request",
+        entityId: invoiceRequest._id.toString(),
+        action: "create",
+        performedBy: session.userId,
+        performedByType: "customer_user",
+        details: `Created and auto-approved invoice request ${requestNumber}`,
       })
+
+      return NextResponse.json(
+        {
+          id: invoiceRequest._id.toString(),
+          request_number: invoiceRequest.request_number,
+          status: invoiceRequest.status,
+          message: "Invoice request created and sent to accountant.",
+        },
+        { status: 201 }
+      )
+    } else {
+      // Needs approval - notify customer_admin users
+      const customerAdmins = await CustomerUser.find({
+        customer_id: session.customerId,
+        role: CUSTOMER_ROLES.CUSTOMER_ADMIN,
+        is_active: true,
+      })
+
+      for (const admin of customerAdmins) {
+        await Notification.create({
+          user_id: admin._id,
+          user_type: "customer_user",
+          event_type: "invoice_request_pending",
+          entity_type: "invoice_request",
+          entity_id: invoiceRequest._id,
+          title: "New Invoice Request",
+          message: `New invoice request ${requestNumber} needs your approval.`,
+          read: false,
+        })
+      }
+
+      await logActivity({
+        entityType: "invoice_request",
+        entityId: invoiceRequest._id.toString(),
+        action: "create",
+        performedBy: session.userId,
+        performedByType: "customer_user",
+        details: `Created invoice request ${requestNumber} (pending approval)`,
+      })
+
+      return NextResponse.json(
+        {
+          id: invoiceRequest._id.toString(),
+          request_number: invoiceRequest.request_number,
+          status: invoiceRequest.status,
+          message: "Invoice request submitted for approval.",
+        },
+        { status: 201 }
+      )
     }
-
-    await logActivity({
-      entityType: "invoice_request",
-      entityId: invoiceRequest._id.toString(),
-      action: "create",
-      performedBy: session.userId,
-      performedByType: "customer_user",
-      details: `Created invoice request ${requestNumber}`,
-    })
-
-    return NextResponse.json(
-      {
-        id: invoiceRequest._id.toString(),
-        request_number: invoiceRequest.request_number,
-        status: invoiceRequest.status,
-      },
-      { status: 201 }
-    )
   } catch (error) {
     console.error("[Invoice Request POST Error]", error)
     return NextResponse.json({ error: "Failed to create invoice request" }, { status: 500 })
