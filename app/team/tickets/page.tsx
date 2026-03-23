@@ -170,8 +170,8 @@ export default function TicketsPage() {
                   <CardContent className="pt-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Resolved</p>
-                        <p className="text-2xl font-bold">{stats.resolved}</p>
+                        <p className="text-sm text-muted-foreground">Closed</p>
+                        <p className="text-2xl font-bold">{stats.closed}</p>
                       </div>
                       <div className="h-9 w-9 rounded-lg bg-green-100 flex items-center justify-center">
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
