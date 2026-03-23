@@ -3,6 +3,15 @@ export const ROLES = {
   ADMIN: "admin",
   MANAGER: "manager",
   AGENT: "agent",
+  ACCOUNTANT: "accountant",
+} as const
+
+export const INVOICE_REQUEST_STATUS = {
+  PENDING_APPROVAL: "pending_approval",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+  UPLOADED: "uploaded",
+  EXPIRED: "expired",
 } as const
 
 export const CUSTOMER_ROLES = {

@@ -14,7 +14,8 @@ import {
   TrendingUp, 
   Package,
   FolderTree,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from "lucide-react"
 import {
   Sidebar,
@@ -55,6 +56,10 @@ const catalogNavItems: NavItem[] = [
   { title: "Requests", href: "/team/product-requests", icon: Mail, roles: ["super_admin", "admin", "manager"] },
 ]
 
+const accountantNavItems: NavItem[] = [
+  { title: "Invoice Requests", href: "/team/invoice-requests", icon: FileText, roles: ["accountant", "super_admin", "admin"] },
+]
+
 const adminNavItems: NavItem[] = [
   { title: "Team Members", href: "/team/users", icon: Users, roles: ["super_admin", "admin", "manager"] },
   { title: "Activity Logs", href: "/team/activity-logs", icon: Activity, roles: ["super_admin", "admin", "manager"] },
@@ -75,6 +80,7 @@ export function TeamNav({ user, onLogout }: { user: any; onLogout: () => void })
 
   const filteredCatalogItems = filterByRole(catalogNavItems)
   const filteredAdminItems = filterByRole(adminNavItems)
+  const filteredAccountantItems = filterByRole(accountantNavItems)
 
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
@@ -136,6 +142,44 @@ export function TeamNav({ user, onLogout }: { user: any; onLogout: () => void })
             <SidebarGroupContent>
               <SidebarMenu>
                 {filteredCatalogItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton 
+                      asChild 
+                      tooltip={item.title}
+                      className={cn(
+                        "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                        isActive(item.href)
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className={cn(
+                          "h-4 w-4 shrink-0",
+                          isActive(item.href) ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                        )} />
+                        <span>{item.title}</span>
+                        {isActive(item.href) && (
+                          <ChevronRight className="ml-auto h-4 w-4 text-primary" />
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Accountant Navigation */}
+        {filteredAccountantItems.length > 0 && (
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Finance
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredAccountantItems.map((item) => (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton 
                       asChild 

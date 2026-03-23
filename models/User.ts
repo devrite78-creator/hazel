@@ -7,7 +7,7 @@ export interface IUser extends Document {
   full_name: string
   mobile_number?: string
   gmail_address?: string
-  role: "super_admin" | "admin" | "manager" | "agent"
+  role: "super_admin" | "admin" | "manager" | "agent" | "accountant"
   is_active: boolean
   created_at: Date
   updated_at: Date
@@ -41,7 +41,7 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ["super_admin", "admin", "manager", "agent"],
+      enum: ["super_admin", "admin", "manager", "agent", "accountant"],
       required: true,
     },
     is_active: {
