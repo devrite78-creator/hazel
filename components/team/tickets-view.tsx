@@ -1,15 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { ChatView } from "./chat-view"
 import { toast } from "sonner"
-import { Trash2 } from "lucide-react"
+import { Trash2, Eye, ArrowUpRight } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,10 +23,9 @@ import {
 import { ROLES } from "@/lib/constants"
 
 export function TicketsView({ userRole, userId }: { userRole: string; userId: string }) {
+  const router = useRouter()
   const [tickets, setTickets] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedTicket, setSelectedTicket] = useState<any>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -54,32 +52,8 @@ export function TicketsView({ userRole, userId }: { userRole: string; userId: st
     }
   }
 
-  const handleOpenTicket = (ticket: any) => {
-    setSelectedTicket(ticket)
-    setIsDialogOpen(true)
-  }
-
-  const handleUpdateStatus = async (ticketId: string, newStatus: string) => {
-    try {
-      const response = await fetch(`/api/tickets/${ticketId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      if (response.ok) {
-        const updated = await response.json()
-        setSelectedTicket(updated)
-        toast.success("Ticket updated")
-        fetchTickets()
-      } else {
-        toast.error("Failed to update ticket")
-      }
-    } catch (error) {
-      console.error("[v0] Update error:", error)
-      toast.error("Failed to update ticket")
-    }
+  const handleViewTicket = (ticketId: string) => {
+    router.push(`/team/tickets/${ticketId}`)
   }
 
   const handleDelete = async (id: string) => {
@@ -91,8 +65,6 @@ export function TicketsView({ userRole, userId }: { userRole: string; userId: st
       })
       if (response.ok) {
         toast.success("Ticket deleted successfully")
-        setIsDialogOpen(false)
-        setSelectedTicket(null)
         fetchTickets()
       } else {
         const data = await response.json()
@@ -192,8 +164,10 @@ export function TicketsView({ userRole, userId }: { userRole: string; userId: st
                     <TableCell>{new Date(ticket.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handleOpenTicket(ticket)}>
-                          View & Chat
+                        <Button size="sm" variant="outline" onClick={() => handleViewTicket(ticket.id)} className="gap-1.5">
+                          <Eye className="h-4 w-4" />
+                          View
+                          <ArrowUpRight className="h-3 w-3" />
                         </Button>
                         {userRole === ROLES.SUPER_ADMIN && (
                           <AlertDialog>
@@ -225,75 +199,6 @@ export function TicketsView({ userRole, userId }: { userRole: string; userId: st
           )}
         </CardContent>
       </Card>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>{selectedTicket?.title}</span>
-              {userRole === ROLES.SUPER_ADMIN && selectedTicket && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="destructive" disabled={deleting === selectedTicket.id}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Ticket</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this ticket? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDelete(selectedTicket.id)}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedTicket && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Status</label>
-                  <Select
-                    value={selectedTicket.status}
-                    onValueChange={(value) => handleUpdateStatus(selectedTicket.id, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending_approval">Pending Approval</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Priority</label>
-                  <p className="text-sm">{selectedTicket.priority}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Description</label>
-                <p className="text-sm text-muted-foreground">{selectedTicket.description}</p>
-              </div>
-
-              <ChatView ticketId={selectedTicket.id} senderType="agent" senderId={userId} />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   )
 }
