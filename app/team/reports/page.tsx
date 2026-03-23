@@ -211,7 +211,7 @@ export default function ReportsPage() {
                                 </TableCell>
                                 <TableCell className="text-center">{agent.total_clients}</TableCell>
                                 <TableCell className="text-center">{agent.total_excel_uploads}</TableCell>
-                                <TableCell className="text-center font-semibold">{agent.avg_response_time_hours.toFixed(2)}</TableCell>
+                                <TableCell className="text-center font-semibold">{(agent.avg_response_time_hours ?? 0).toFixed(2)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
