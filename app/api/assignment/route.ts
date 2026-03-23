@@ -53,23 +53,23 @@ export async function POST(request: Request) {
 
     // Check if assignment exists, update or create
     const existingAssignment = await CustomerAgentAssignment.findOne({
-      customerId,
-      agentId,
+      customer_id: customerId,
+      agent_id: agentId,
     })
 
     let result
     if (existingAssignment) {
       result = await CustomerAgentAssignment.findByIdAndUpdate(
         existingAssignment._id,
-        { assignedAt: new Date() },
+        { assigned_at: new Date() },
         { new: true }
       ).lean()
     } else {
       const newAssignment = await CustomerAgentAssignment.create({
-        customerId,
-        agentId,
-        assignedBy: session.userId,
-        assignedAt: new Date(),
+        customer_id: customerId,
+        agent_id: agentId,
+        assigned_by: session.userId,
+        assigned_at: new Date(),
       })
       result = newAssignment.toObject()
     }
@@ -81,15 +81,15 @@ export async function POST(request: Request) {
       action: "create",
       performedBy: session.userId,
       performedByType: "team",
-      newValues: { agentId, customerId },
+      newValues: { agent_id: agentId, customer_id: customerId },
     })
 
     return NextResponse.json({
       id: (result as any)._id.toString(),
-      customer_id: (result as any).customerId,
-      agent_id: (result as any).agentId,
-      assigned_by: (result as any).assignedBy,
-      assigned_at: (result as any).assignedAt,
+      customer_id: (result as any).customer_id,
+      agent_id: (result as any).agent_id,
+      assigned_by: (result as any).assigned_by,
+      assigned_at: (result as any).assigned_at,
     }, { status: 201 })
   } catch (error) {
     console.error("[v0] Error assigning customer:", error)
