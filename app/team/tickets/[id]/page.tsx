@@ -120,10 +120,10 @@ export default function TicketDetailPage() {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-background">
+      <div className="flex h-screen bg-background w-full">
         <TeamNav user={user} onLogout={handleLogout} />
         <main className="flex-1 overflow-auto">
-          <div className="p-6 lg:p-8 max-w-6xl mx-auto">
+          <div className="p-6 lg:p-8 mx-auto">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
               <Button variant="ghost" size="icon" asChild>
