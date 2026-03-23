@@ -44,7 +44,7 @@ export default function ActivityLogsPage() {
 
         if (logsResponse.ok) {
           const logsData = await logsResponse.json()
-          setLogs(logsData)
+          setLogs(logsData.logs || [])
         }
       } catch (error) {
         console.error("[v0] Error fetching data:", error)
