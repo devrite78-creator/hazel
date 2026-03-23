@@ -7,7 +7,8 @@ import Notification from "@/models/Notification"
 import { logActivity } from "@/lib/activity-logger"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { sendSMS, formatTicketApprovedSMS, formatTicketRejectedSMS } from "@/lib/sms"
+import { sendSMS, sendWhatsApp, formatTicketApprovedSMS, formatTicketRejectedSMS, formatTicketApprovedForAgentSMS } from "@/lib/sms"
+import { ROLES } from "@/lib/constants"
 import { sendTicketEmail } from "@/lib/email-service"
 import { TICKET_STATUS } from "@/lib/constants"
 import mongoose from "mongoose"
@@ -80,15 +81,36 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       // Find assigned team agent and notify them
       const assignment = await CustomerAgentAssignment.findOne({ customer_id: sessionData.customerId })
 
+      const productCode = (ticket as any).product_id?.product_code || "N/A"
+      const customerName = (ticket as any).customer_id.company_name
+
       if (assignment && assignment.agent_id) {
         const agent = await User.findById(assignment.agent_id)
 
         if (agent) {
-          // Send SMS to team agent
+          // Send detailed SMS to team agent with product_id + title + customer name
           if (agent.mobile_number) {
             await sendSMS({
               to: agent.mobile_number,
-              message: formatTicketApprovedSMS(ticketNumber, productName),
+              message: formatTicketApprovedForAgentSMS(
+                ticketNumber,
+                productCode,
+                (ticket as any).title,
+                customerName
+              ),
+              type: "ticket_approved",
+              relatedId: ticketId,
+            })
+
+            // Also send WhatsApp message
+            await sendWhatsApp({
+              to: agent.mobile_number,
+              message: formatTicketApprovedForAgentSMS(
+                ticketNumber,
+                productCode,
+                (ticket as any).title,
+                customerName
+              ),
               type: "ticket_approved",
               relatedId: ticketId,
             })
@@ -100,7 +122,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
               agent.gmail_address,
               (ticket as any).title,
               (ticket as any).description,
-              (ticket as any).customer_id.company_name,
+              customerName,
               ticketId,
             )
           }
@@ -112,7 +134,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             event_type: "ticket_approved",
             entity_type: "ticket",
             entity_id: ticketId,
-            title: `Ticket Approved - ${(ticket as any).customer_id.company_name}`,
+            title: `Ticket Approved - ${customerName}`,
             message: `Ticket "${(ticket as any).title}" has been approved and is now assigned to you.`,
             read: false,
           })
@@ -120,6 +142,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           // Assign ticket to agent
           await Ticket.findByIdAndUpdate(ticketId, { assigned_agent_id: agent._id })
         }
+      }
+
+      // Notify super_admin, admin, and manager about the approved ticket
+      const teamLeaders = await User.find({
+        role: { $in: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER] },
+        is_active: true,
+      })
+
+      for (const leader of teamLeaders) {
+        await Notification.create({
+          user_id: leader._id,
+          user_type: "team",
+          event_type: "ticket_approved",
+          entity_type: "ticket",
+          entity_id: ticketId,
+          title: `New Ticket Approved - ${customerName}`,
+          message: `Ticket "${(ticket as any).title}" (${ticketNumber}) for ${productCode} has been approved by customer admin.`,
+          read: false,
+        })
       }
 
       // Notify the customer_agent who created the ticket

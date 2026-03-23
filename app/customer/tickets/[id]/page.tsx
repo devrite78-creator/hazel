@@ -62,7 +62,7 @@ export default function CustomerTicketDetailPage() {
 
   const checkTeamReplies = async () => {
     try {
-      const response = await fetch(`/api/messages?ticket_id=${ticketId}`)
+      const response = await fetch(`/api/messages?ticketId=${ticketId}`)
       if (response.ok) {
         const messages = await response.json()
         const teamReplied = messages.some((msg: any) => msg.sender_type === "agent")
@@ -150,7 +150,8 @@ export default function CustomerTicketDetailPage() {
     approved: { variant: "default", label: "Approved", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
     rejected: { variant: "destructive", label: "Rejected", icon: <XCircle className="h-3.5 w-3.5" /> },
     open: { variant: "default", label: "Open", icon: <AlertCircle className="h-3.5 w-3.5" /> },
-    "in-progress": { variant: "secondary", label: "In Progress", icon: <Clock className="h-3.5 w-3.5" /> },
+    in_progress: { variant: "secondary", label: "In Progress", icon: <Clock className="h-3.5 w-3.5" /> },
+    waiting_for_response: { variant: "default", label: "Waiting for Response", icon: <MessageSquare className="h-3.5 w-3.5" /> },
     resolved: { variant: "outline", label: "Resolved", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
     closed: { variant: "outline", label: "Closed", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
   }
@@ -171,7 +172,8 @@ export default function CustomerTicketDetailPage() {
   }
 
   const status = statusConfig[ticket.status] || { variant: "outline" as const, label: ticket.status, icon: null }
-  const canCloseTicket = hasTeamReplied && ticket.status !== "closed" && ticket.status !== "resolved"
+  // Customer can only close ticket when status is "waiting_for_response"
+  const canCloseTicket = ticket.status === "waiting_for_response"
 
   return (
     <SidebarProvider>

@@ -8,7 +8,7 @@ export interface ITicket extends Document {
   title: string
   description: string
   priority: "low" | "medium" | "high" | "urgent"
-  status: "pending_approval" | "open" | "in_progress" | "resolved" | "closed" | "rejected"
+  status: "pending_approval" | "open" | "in_progress" | "waiting_for_response" | "resolved" | "closed" | "rejected"
   created_by_customer_user?: mongoose.Types.ObjectId
   assigned_agent_id?: mongoose.Types.ObjectId
   // Approval workflow
@@ -56,7 +56,7 @@ const TicketSchema = new Schema<ITicket>(
     },
     status: {
       type: String,
-      enum: ["pending_approval", "open", "in_progress", "resolved", "closed", "rejected"],
+      enum: ["pending_approval", "open", "in_progress", "waiting_for_response", "resolved", "closed", "rejected"],
       default: "pending_approval",
     },
     created_by_customer_user: {

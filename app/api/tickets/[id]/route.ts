@@ -1,10 +1,14 @@
 import connectDB from "@/lib/mongodb"
 import Ticket from "@/models/Ticket"
 import Message from "@/models/Message"
+import User from "@/models/User"
+import CustomerUser from "@/models/CustomerUser"
+import Notification from "@/models/Notification"
 import { logActivity } from "@/lib/activity-logger"
+import { sendSMS, sendWhatsApp, formatWaitingForResponseSMS, formatTicketClosedByCustomerSMS } from "@/lib/sms"
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { ROLES } from "@/lib/constants"
+import { ROLES, TICKET_STATUS } from "@/lib/constants"
 import mongoose from "mongoose"
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -93,7 +97,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       updateData.status = status
 
       // Reset auto-close time when status changes
-      if (status === "in_progress" || status === "open") {
+      if (status === "in_progress" || status === "open" || status === "waiting_for_response") {
         updateData.auto_close_at = new Date(Date.now() + 2 * 60 * 60 * 1000)
       } else {
         updateData.auto_close_at = null
@@ -135,6 +139,81 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       newValues,
       details: `Updated ticket ${(currentTicket as any).ticket_number}`,
     })
+
+    // Handle status change notifications
+    if (status !== undefined && status !== oldValues.status) {
+      const ticketNumber = (currentTicket as any).ticket_number
+
+      // When team changes status to "waiting_for_response" - notify customer
+      if (status === TICKET_STATUS.WAITING_FOR_RESPONSE && userType === "team") {
+        // Notify the customer user who created the ticket
+        if ((currentTicket as any).created_by_customer_user) {
+          const customerUser = await CustomerUser.findById((currentTicket as any).created_by_customer_user)
+          if (customerUser) {
+            // Send SMS
+            if (customerUser.mobile_number) {
+              await sendSMS({
+                to: customerUser.mobile_number,
+                message: formatWaitingForResponseSMS(ticketNumber, session.fullName || "Support Agent"),
+                type: "general",
+                relatedId: id,
+              })
+            }
+
+            // Create notification
+            await Notification.create({
+              user_id: customerUser._id,
+              user_type: "customer_user",
+              event_type: "ticket_waiting_response",
+              entity_type: "ticket",
+              entity_id: id,
+              title: "Ticket Ready for Your Response",
+              message: `${session.fullName || "Support Agent"} has replied to ticket ${ticketNumber}. You can now close this ticket if your issue is resolved.`,
+              read: false,
+            })
+          }
+        }
+      }
+
+      // When customer closes the ticket - notify the assigned agent
+      if (status === TICKET_STATUS.CLOSED && userType === "customer") {
+        const assignedAgentId = (currentTicket as any).assigned_agent_id
+        if (assignedAgentId) {
+          const agent = await User.findById(assignedAgentId)
+          if (agent) {
+            // Send SMS
+            if (agent.mobile_number) {
+              await sendSMS({
+                to: agent.mobile_number,
+                message: formatTicketClosedByCustomerSMS(ticketNumber, session.fullName || session.companyName || "Customer"),
+                type: "general",
+                relatedId: id,
+              })
+
+              // Also send WhatsApp
+              await sendWhatsApp({
+                to: agent.mobile_number,
+                message: formatTicketClosedByCustomerSMS(ticketNumber, session.fullName || session.companyName || "Customer"),
+                type: "general",
+                relatedId: id,
+              })
+            }
+
+            // Create notification
+            await Notification.create({
+              user_id: agent._id,
+              user_type: "team",
+              event_type: "ticket_closed",
+              entity_type: "ticket",
+              entity_id: id,
+              title: "Ticket Closed by Customer",
+              message: `Ticket ${ticketNumber} has been closed by ${session.fullName || session.companyName || "the customer"}.`,
+              read: false,
+            })
+          }
+        }
+      }
+    }
 
     const transformed = {
       ...updatedTicket?.toObject(),

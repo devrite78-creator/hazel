@@ -105,7 +105,8 @@ export default function TicketDetailPage() {
 
   const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     open: "default",
-    "in-progress": "secondary",
+    in_progress: "secondary",
+    waiting_for_response: "default",
     resolved: "outline",
     closed: "outline",
   }
@@ -197,11 +198,17 @@ export default function TicketDetailPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="open">Open</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="waiting_for_response">Waiting for Response</SelectItem>
                         <SelectItem value="resolved">Resolved</SelectItem>
                         <SelectItem value="closed">Closed</SelectItem>
                       </SelectContent>
                     </Select>
+                    {ticket.status === "waiting_for_response" && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Customer can now close this ticket once their issue is resolved.
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
 

@@ -86,6 +86,7 @@ export function TicketsView({ userRole, userId }: { userRole: string; userId: st
       open: "bg-yellow-100 text-yellow-800",
       "in-progress": "bg-blue-100 text-blue-800",
       in_progress: "bg-blue-100 text-blue-800",
+      waiting_for_response: "bg-orange-100 text-orange-800",
       resolved: "bg-green-100 text-green-800",
       closed: "bg-gray-100 text-gray-800",
     }
@@ -100,6 +101,7 @@ export function TicketsView({ userRole, userId }: { userRole: string; userId: st
       open: "Open",
       "in-progress": "In Progress",
       in_progress: "In Progress",
+      waiting_for_response: "Waiting for Response",
       resolved: "Resolved",
       closed: "Closed",
     }
@@ -124,7 +126,8 @@ export function TicketsView({ userRole, userId }: { userRole: string; userId: st
               <SelectItem value="pending_approval">Pending Approval</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="waiting_for_response">Waiting for Response</SelectItem>
               <SelectItem value="resolved">Resolved</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
